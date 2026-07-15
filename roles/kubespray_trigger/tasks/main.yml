@@ -1,0 +1,24 @@
+---
+- name: Verify dynamic inventory exists
+  stat:
+    path: "{{ playbook_dir }}/inventory/hosts.ini"
+  register: inventory_file
+
+- name: Fail if inventory is missing
+  fail:
+    msg: "Inventory file not found! Please run the provision_gcp role first."
+  when: not inventory_file.stat.exists
+
+- name: Run Kubespray to install/scale Kubernetes
+  command: >
+    ../venv/bin/ansible-playbook -i ../inventory/hosts.ini cluster.yml
+    --become --become-user=root
+  args:
+    chdir: "{{ playbook_dir }}/kubespray"
+  environment:
+    ANSIBLE_HOST_KEY_CHECKING: "False"
+  register: kubespray_output
+
+- name: Print Kubespray output
+  debug:
+    var: kubespray_output.stdout_lines

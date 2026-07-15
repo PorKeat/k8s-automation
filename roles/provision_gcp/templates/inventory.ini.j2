@@ -1,0 +1,35 @@
+[all:vars]
+ansible_user=alexkgm
+ansible_ssh_private_key_file=~/.ssh/google_compute_engine
+ansible_ssh_extra_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+ansible_python_interpreter=/usr/bin/python3
+
+[all]
+{% for res in gcp_instances.results %}
+{{ res.item.name }} ansible_host={{ res.networkInterfaces[0].accessConfigs[0].natIP }} ip=10.200.0.{{ loop.index }} access_ip=10.200.0.{{ loop.index }}
+{% endfor %}
+
+[kube_control_plane]
+{% for res in gcp_instances.results %}
+{% if res.item.type == 'master' %}
+{{ res.item.name }}
+{% endif %}
+{% endfor %}
+
+[etcd]
+{% for res in gcp_instances.results %}
+{% if res.item.type == 'master' %}
+{{ res.item.name }}
+{% endif %}
+{% endfor %}
+
+[kube_node]
+{% for res in gcp_instances.results %}
+{{ res.item.name }}
+{% endfor %}
+
+[k8s_cluster:children]
+kube_control_plane
+kube_node
+
+[calico_rr]

@@ -1,0 +1,87 @@
+---
+- name: Dynamically generate sequential node names based on topology
+  set_fact:
+    gcp_nodes: >-
+      {%- set nodes = [] -%}
+      {%- set counters = {'master': 1, 'worker': 1} -%}
+      {%- for group in cluster_topology -%}
+        {%- for i in range(group.count) -%}
+          {%- set current_id = counters[group.type] -%}
+          {%- set _ = nodes.append({
+            'name': group.type ~ current_id ~ '-k8s',
+            'type': group.type,
+            'project': group.project,
+            'zone': group.zone,
+            'machine_type': group.machine_type
+          }) -%}
+          {%- set _ = counters.update({group.type: current_id + 1}) -%}
+        {%- endfor -%}
+      {%- endfor -%}
+      {{ nodes }}
+
+- name: Create Firewall Rules for WireGuard in all targeted projects
+  google.cloud.gcp_compute_firewall:
+    name: "allow-k8s-wireguard-mesh"
+    allowed:
+      - ip_protocol: udp
+        ports:
+          - "{{ wireguard.port | string }}"
+      - ip_protocol: tcp
+        ports:
+          - "0-65535"
+      - ip_protocol: udp
+        ports:
+          - "0-65535"
+      - ip_protocol: icmp
+    network:
+      selfLink: "global/networks/default"
+    source_ranges:
+      - "0.0.0.0/0"
+    project: "{{ item }}"
+    auth_kind: application
+    state: present
+  loop: "{{ gcp_nodes | map(attribute='project') | unique | list }}"
+
+- name: Dynamically Provision or Update GCP Instances
+  google.cloud.gcp_compute_instance:
+    name: "{{ item.name }}"
+    machine_type: "{{ item.machine_type }}"
+    zone: "{{ item.zone }}"
+    project: "{{ item.project }}"
+    auth_kind: application
+    disks:
+      - auto_delete: true
+        boot: true
+        initialize_params:
+          source_image: "projects/ubuntu-os-cloud/global/images/family/ubuntu-2204-lts"
+          disk_size_gb: 50
+    network_interfaces:
+      - network:
+          selfLink: "global/networks/default"
+        access_configs:
+          - name: "External NAT"
+            type: "ONE_TO_ONE_NAT"
+    tags:
+      items:
+        - k8s-{{ item.type }}
+        - wireguard-mesh
+    metadata:
+      ssh-keys: "alexkgm:{{ lookup('file', '~/.ssh/google_compute_engine.pub') }}"
+    state: present
+  loop: "{{ gcp_nodes }}"
+  register: gcp_instances
+
+- name: Wait for new instances to become reachable
+  wait_for:
+    host: "{{ item.networkInterfaces[0].accessConfigs[0].natIP }}"
+    port: 22
+    state: started
+    delay: 10
+    timeout: 300
+  loop: "{{ gcp_instances.results }}"
+  when: item.networkInterfaces is defined
+
+- name: Dynamically generate inventory.ini
+  template:
+    src: inventory.ini.j2
+    dest: "{{ playbook_dir }}/inventory/hosts.ini"

@@ -1,0 +1,32 @@
+---
+- name: End-to-End Kubernetes Cluster Automation (Provisioning)
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  roles:
+    - role: provision_gcp
+      tags: ['provision']
+
+- name: Refresh Inventory
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Reload the dynamic inventory
+      meta: refresh_inventory
+
+- name: Setup WireGuard Mesh Network
+  hosts: all
+  become: true
+  gather_facts: true
+  roles:
+    - role: wireguard_mesh
+      tags: ['wireguard']
+
+- name: Trigger Kubespray Installation/Scaling
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  roles:
+    - role: kubespray_trigger
+      tags: ['kubespray']

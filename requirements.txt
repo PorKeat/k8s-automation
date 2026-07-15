@@ -1,0 +1,5 @@
+# Ansible dependencies for Google Cloud Platform modules
+requests
+google-auth
+-r kubespray/requirements.txt
+google-auth
