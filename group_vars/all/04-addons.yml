@@ -16,10 +16,10 @@ metallb_enabled: false
 kube_vip_enabled: false
 
 # --- Certificate Management ---
-cert_manager_enabled: false
+cert_manager_enabled: true
 
 # --- Continuous Delivery ---
-argocd_enabled: false
+argocd_enabled: true
 
 # --- Storage Provisioners ---
 local_path_provisioner_enabled: true
