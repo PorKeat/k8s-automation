@@ -1,0 +1,16 @@
+---
+- name: Reset Kubernetes Cluster
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  roles:
+    - role: kubespray_reset
+      tags: ['reset']
+
+- name: Teardown GCP Infrastructure
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  roles:
+    - role: teardown_gcp
+      tags: ['teardown']

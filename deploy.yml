@@ -1,4 +1,12 @@
 ---
+- name: Pre-Flight Validations
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  roles:
+    - role: preflight_checks
+      tags: ['preflight']
+
 - name: End-to-End Kubernetes Cluster Automation (Provisioning)
   hosts: localhost
   connection: local
@@ -30,3 +38,13 @@
   roles:
     - role: kubespray_trigger
       tags: ['kubespray']
+
+- name: Post-Installation Helm Apps (Longhorn, Prometheus, Thanos)
+  hosts: kube_control_plane[0]
+  become: true
+  gather_facts: false
+  environment:
+    K8S_AUTH_KUBECONFIG: /etc/kubernetes/admin.conf
+  roles:
+    - role: post_install_apps
+      tags: ['helm']

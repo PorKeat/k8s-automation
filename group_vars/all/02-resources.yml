@@ -1,0 +1,29 @@
+# ==============================================================================
+# 2. RESOURCE RESERVATIONS & LIMITS
+# ==============================================================================
+# Protect your host VMs from crashing by reserving resources for the OS.
+
+# --- KUBERNETES DAEMONS ---
+# Reserves resources strictly for kubelet and the container runtime.
+kube_reserved: true
+kube_memory_reserved: 256Mi
+kube_cpu_reserved: 100m
+kube_ephemeral_storage_reserved: 2Gi
+
+# --- OS SYSTEM DAEMONS ---
+# Reserves resources for the Linux OS, SSH, and WireGuard.
+system_reserved: true
+system_memory_reserved: 256Mi
+system_cpu_reserved: 100m
+system_ephemeral_storage_reserved: 2Gi
+
+# --- EVICTION THRESHOLDS ---
+# When the server hits these limits, Kubernetes will start evicting pods to save the node.
+eviction_hard:
+  memory.available: "500Mi"
+  nodefs.available: "10%"
+  imagefs.available: "15%"
+
+# --- NODE CAPACITIES ---
+# Maximum number of pods that can run on a single node
+kubelet_max_pods: 110

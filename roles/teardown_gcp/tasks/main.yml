@@ -1,0 +1,37 @@
+---
+- name: Dynamically generate sequential node names based on topology
+  set_fact:
+    gcp_nodes: >-
+      {%- set nodes = [] -%}
+      {%- set counters = {'master': 1, 'worker': 1} -%}
+      {%- for group in cluster_topology if group.count is defined -%}
+        {%- for i in range(group.count) -%}
+          {%- set current_id = counters[group.type] -%}
+          {%- set _ = nodes.append({
+            'name': group.type ~ current_id ~ '-gcp',
+            'type': group.type,
+            'project': group.project,
+            'zone': group.zone,
+            'machine_type': group.machine_type
+          }) -%}
+          {%- set _ = counters.update({group.type: current_id + 1}) -%}
+        {%- endfor -%}
+      {%- endfor -%}
+      {{ nodes }}
+
+- name: Delete GCP Instances
+  google.cloud.gcp_compute_instance:
+    name: "{{ item.name }}"
+    zone: "{{ item.zone }}"
+    project: "{{ item.project }}"
+    auth_kind: application
+    state: absent
+  loop: "{{ gcp_nodes }}"
+
+- name: Delete Firewall Rules for WireGuard in all targeted projects
+  google.cloud.gcp_compute_firewall:
+    name: "allow-k8s-wireguard-mesh"
+    project: "{{ item }}"
+    auth_kind: application
+    state: absent
+  loop: "{{ gcp_nodes | map(attribute='project') | unique | list }}"

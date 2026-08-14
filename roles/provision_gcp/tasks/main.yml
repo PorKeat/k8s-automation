@@ -4,11 +4,11 @@
     gcp_nodes: >-
       {%- set nodes = [] -%}
       {%- set counters = {'master': 1, 'worker': 1} -%}
-      {%- for group in cluster_topology -%}
+      {%- for group in cluster_topology if group.count is defined -%}
         {%- for i in range(group.count) -%}
           {%- set current_id = counters[group.type] -%}
           {%- set _ = nodes.append({
-            'name': group.type ~ current_id ~ '-k8s',
+            'name': group.type ~ current_id ~ '-gcp',
             'type': group.type,
             'project': group.project,
             'zone': group.zone,
@@ -18,6 +18,23 @@
         {%- endfor -%}
       {%- endfor -%}
       {{ nodes }}
+    
+    existing_nodes: >-
+      {%- set ext_nodes = [] -%}
+      {%- set counters = {'master': 1, 'worker': 1} -%}
+      {%- for group in cluster_topology if group.ips is defined -%}
+        {%- for ip in group.ips -%}
+          {%- set current_id = counters[group.type] -%}
+          {%- set _ = ext_nodes.append({
+            'name': group.type ~ current_id ~ '-ext',
+            'type': group.type,
+            'ip': ip,
+            'user': group.user | default('alexkgm')
+          }) -%}
+          {%- set _ = counters.update({group.type: current_id + 1}) -%}
+        {%- endfor -%}
+      {%- endfor -%}
+      {{ ext_nodes }}
 
 - name: Create Firewall Rules for WireGuard in all targeted projects
   google.cloud.gcp_compute_firewall:
@@ -66,7 +83,7 @@
         - k8s-{{ item.type }}
         - wireguard-mesh
     metadata:
-      ssh-keys: "alexkgm:{{ lookup('file', '~/.ssh/google_compute_engine.pub') }}"
+      ssh-keys: "alexkgm:{{ lookup('file', ansible_ssh_private_key_file ~ '.pub') }}"
     state: present
   loop: "{{ gcp_nodes }}"
   register: gcp_instances
@@ -78,8 +95,8 @@
     state: started
     delay: 10
     timeout: 300
-  loop: "{{ gcp_instances.results }}"
-  when: item.networkInterfaces is defined
+  loop: "{{ gcp_instances.results | default([]) }}"
+  when: gcp_instances.results is defined and item.networkInterfaces is defined
 
 - name: Dynamically generate inventory.ini
   template:

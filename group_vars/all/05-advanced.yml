@@ -1,0 +1,70 @@
+# ==============================================================================
+# 5. ADVANCED CONFIGURATION
+# ==============================================================================
+# Highly specialized edge-case settings for production environments.
+
+# --- HARDWARE ACCELERATION (GPU) ---
+# Auto-install NVIDIA GPU drivers for Machine Learning workloads
+nvidia_accelerator_enabled: false
+# nvidia_gpu_flavor: gtx  # options: tesla, gtx
+
+# --- SECURITY & COMPLIANCE ---
+# Encrypt Kubernetes Secrets at rest on the etcd hard drive
+kube_encrypt_secret_data: false
+# Enable API Audit Logging (useful for compliance and security auditing)
+kubernetes_audit: false
+
+# --- SINGLE SIGN-ON (OIDC) ---
+# Connect Kubernetes to an OIDC provider (Google, Okta, etc.) for user logins
+# kube_oidc_auth: false
+# kube_oidc_url: "https://your-oidc-provider.com"
+# kube_oidc_client_id: "kubernetes"
+
+# --- HIGH AVAILABILITY (HA) ---
+# If you have an external LoadBalancer pointing to your API servers (master nodes)
+# loadbalancer_apiserver:
+#   address: 1.2.3.4
+#   port: 6443
+
+# --- CORPORATE PROXY SETTINGS ---
+# If your servers are behind a strict corporate firewall, route traffic through a proxy
+# http_proxy: "http://proxy.example.com:8080"
+# https_proxy: "http://proxy.example.com:8080"
+# no_proxy: "localhost,127.0.0.1,10.233.0.0/18,10.233.64.0/18"
+
+# --- GRACEFUL SHUTDOWN ---
+# Allow pods time to shut down gracefully when a node is powered off
+# kubelet_shutdown_grace_period: 60s
+# kubelet_shutdown_grace_period_critical_pods: 20s
+
+# --- NTP (TIME SYNCHRONIZATION) ---
+# Ensure all nodes have perfectly synchronized clocks (critical for etcd)
+ntp_enabled: false
+# ntp_servers:
+#   - "0.pool.ntp.org iburst"
+#   - "1.pool.ntp.org iburst"
+
+# --- IPV6 DUAL-STACK SUPPORT ---
+# Enable true IPv4/IPv6 dual-stack networking for your pods
+# ipv6_stack: false
+# kube_service_addresses_ipv6: fd85:ee78:d8a6:8607::1000/116
+# kube_pods_subnet_ipv6: fd85:ee78:d8a6:8607::1:0000/112
+
+# --- STRICT TLS & CRYPTO ---
+# Enforce a minimum TLS version for the Kubernetes API for security compliance
+# tls_min_version: "VersionTLS12"
+# Custom cipher suites (e.g. TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256)
+# tls_cipher_suites: []
+
+# --- KATA CONTAINERS ---
+# Use Kata Containers (lightweight VMs) instead of standard Linux containers for ultra-secure isolation
+# kata_containers_enabled: false
+
+# --- IMAGE DOWNLOADING & CACHING ---
+# Cache container images on nodes to speed up cluster scaling
+# download_container: true
+# download_force_cache: false
+
+# --- EVENT RETENTION ---
+# How long the Kubernetes API remembers cluster events (default is 1 hour)
+# event_ttl_duration: "1h0m0s"

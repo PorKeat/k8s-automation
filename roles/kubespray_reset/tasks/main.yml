@@ -1,0 +1,9 @@
+---
+- name: Run Kubespray to reset Kubernetes
+  command: >
+    ../venv/bin/ansible-playbook -i ../inventory/hosts.ini reset.yml
+    --become --become-user=root -e "reset_confirmation=yes"
+  args:
+    chdir: "{{ playbook_dir }}/kubespray"
+  environment:
+    ANSIBLE_HOST_KEY_CHECKING: "False"

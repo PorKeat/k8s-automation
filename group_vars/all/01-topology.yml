@@ -1,0 +1,40 @@
+# ==============================================================================
+# 1. TOPOLOGY & CORE CLUSTER SETTINGS
+# ==============================================================================
+
+# --- CLUSTER TOPOLOGY ---
+cluster_topology:
+  # SCENARIO 1: START FROM SCRATCH (GCP Provisioning)
+  - type: "master"
+    count: 3
+    project: "project_id"
+    zone: "asia-southeast1-a"
+    machine_type: "e2-standard-2"
+  
+  # SCENARIO 2: BRING YOUR OWN INSTANCES (BYOI)
+  - type: "worker"
+    user: "ubuntu"
+    ips:
+      - "198.51.100.1"
+      - "198.51.100.2"
+
+# --- WIREGUARD VPN MESH ---
+wireguard:
+  mesh_cidr: "10.200.0.0/24"
+  port: 51820
+
+# --- GLOBAL SSH CONFIGURATION ---
+# The SSH key used by Ansible to connect to both GCP and external servers.
+ansible_ssh_private_key_file: "~/.ssh/google_compute_engine"
+
+# --- CORE CLUSTER IDENTITY ---
+cluster_name: cluster.local
+container_manager: containerd
+
+# --- CERTIFICATE MANAGEMENT ---
+# Automatically renew K8S control plane certificates on the first Monday of each month
+auto_renew_certificates: false
+
+# --- LOGGING ---
+# Cluster Loglevel configuration
+kube_log_level: 2

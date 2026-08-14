@@ -1,0 +1,21 @@
+---
+- name: Verify that GCP Project IDs have been configured
+  fail:
+    msg: |
+      [PRE-FLIGHT ERROR]: You forgot to set your Google Cloud Project ID!
+      Please open 'group_vars/all/01-topology.yml' and change 'project: "project_id"' 
+      to your actual Google Cloud Project ID before deploying.
+  loop: "{{ cluster_topology }}"
+  when: item.count is defined and item.project == "project_id"
+
+- name: Verify that the SSH Private Key exists locally
+  stat:
+    path: "{{ ansible_ssh_private_key_file }}"
+  register: ssh_key_check
+
+- name: Fail if SSH key is missing
+  fail:
+    msg: |
+      [PRE-FLIGHT ERROR]: Your SSH private key was not found at {{ ansible_ssh_private_key_file }}
+      Please generate an SSH key, or update 'ansible_ssh_private_key_file' in '01-topology.yml'.
+  when: not ssh_key_check.stat.exists

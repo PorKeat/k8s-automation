@@ -1,31 +1,47 @@
+{% set all_nodes = [] %}
+{% if gcp_instances is defined and gcp_instances.results is defined %}
+{% for res in gcp_instances.results if not res.skipped | default(false) %}
+  {% set _ = all_nodes.append({
+     'name': res.item.name,
+     'type': res.item.type,
+     'ansible_host': res.networkInterfaces[0].accessConfigs[0].natIP,
+     'ansible_user': 'alexkgm'
+  }) %}
+{% endfor %}
+{% endif %}
+{% for ext in existing_nodes %}
+  {% set _ = all_nodes.append({
+     'name': ext.name,
+     'type': ext.type,
+     'ansible_host': ext.ip,
+     'ansible_user': ext.user
+  }) %}
+{% endfor %}
+
 [all:vars]
 ansible_user=alexkgm
-ansible_ssh_private_key_file=~/.ssh/google_compute_engine
+ansible_ssh_private_key_file={{ ansible_ssh_private_key_file }}
 ansible_ssh_extra_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
 ansible_python_interpreter=/usr/bin/python3
 
 [all]
-{% for res in gcp_instances.results %}
-{{ res.item.name }} ansible_host={{ res.networkInterfaces[0].accessConfigs[0].natIP }} ip=10.200.0.{{ loop.index }} access_ip=10.200.0.{{ loop.index }}
+{% for node in all_nodes %}
+{{ node.name }} ansible_host={{ node.ansible_host }}{% if node.ansible_user != 'alexkgm' %} ansible_user={{ node.ansible_user }}{% endif %} ip=10.200.0.{{ loop.index }} access_ip=10.200.0.{{ loop.index }}
 {% endfor %}
 
 [kube_control_plane]
-{% for res in gcp_instances.results %}
-{% if res.item.type == 'master' %}
-{{ res.item.name }}
-{% endif %}
+{% for node in all_nodes if node.type == 'master' %}
+{{ node.name }}
 {% endfor %}
 
 [etcd]
-{% for res in gcp_instances.results %}
-{% if res.item.type == 'master' %}
-{{ res.item.name }}
-{% endif %}
+{% for node in all_nodes if node.type == 'master' %}
+{{ node.name }}
 {% endfor %}
 
 [kube_node]
-{% for res in gcp_instances.results %}
-{{ res.item.name }}
+{% for node in all_nodes %}
+{{ node.name }}
 {% endfor %}
 
 [k8s_cluster:children]

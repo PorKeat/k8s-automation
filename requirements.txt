@@ -3,3 +3,4 @@ requests
 google-auth
 -r kubespray/requirements.txt
 google-auth
+kubernetes
